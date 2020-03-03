@@ -33,6 +33,7 @@
 						<password>Outlook@06</password>
 						<environment>Sandbox</environment>
 						<applicationName>webSockets</applicationName>
+						<worker>1</worker>
 						<workerType>MICRO</workerType>
 						<!-- <businessGroup>APISERO</businessGroup> -->
 						<properties>
