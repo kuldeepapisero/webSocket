@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:websocket="http://www.mulesoft.org/schema/mule/websocket"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/websocket http://www.mulesoft.org/schema/mule/websocket/current/mule-websocket.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<websocket:config name="WebSockets_Config" doc:name="WebSockets Config" doc:id="3f558732-d77b-40f8-b697-3bf3355d7d10" >
+		<websocket:connection >
+			<websocket:client-settings host="localhost" port="80" basePath="/ws"/>
+		</websocket:connection>
+	</websocket:config>
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="b5cfc089-8a35-4cc2-acbb-f8f9b0c1acf2" basePath="/regularhttp2" >
+		<http:listener-connection host="0.0.0.0" port="8083" />
+	</http:listener-config>
+	<flow name="web2Flow1" doc:id="ba80789d-052d-4ded-a55a-4ebefc76355b" >
+		<scheduler doc:name="Scheduler" doc:id="85ea6601-5b2b-4783-9ece-1a34e78e661c" >
+			<scheduling-strategy >
+				<fixed-frequency />
+			</scheduling-strategy>
+		</scheduler>
+		<logger level="INFO" doc:name="Logger" doc:id="59261ce3-b67a-406d-84f4-e74c2511dfa8" />
+		<websocket:open-outbound-socket doc:name="Open outbound socket" doc:id="91624a1d-d1a5-449b-bd44-f62806588cbc" config-ref="WebSockets_Config" socketId="111" path="/chatting"/>
+		<logger level="INFO" doc:name="Logger" doc:id="5e93ba5d-f513-4770-8930-e1a53d6bcef1" message="connection created.."/>
+		<websocket:send doc:name="Send" doc:id="4c48728b-70ec-4894-8843-0d1a2b3e936d" config-ref="wsClient" socketId="#[attributes.socketId]"/>
+	</flow>
+	<flow name="web2Flow" doc:id="a8436c4c-11fa-436c-bace-a14946ccd6e6" >
+		<websocket:on-inbound-connection doc:name="On New Inbound Connection" doc:id="bba363dc-351d-4612-aac1-21b00c0d4a24" config-ref="wsClient" path="/chatting"/>
+		<logger level="INFO" doc:name="Logger" doc:id="e390f293-4d22-43fd-8d92-3cc765767651" message="new connection established"/>
+	</flow>
+</mule>

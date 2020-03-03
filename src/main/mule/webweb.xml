@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:email="http://www.mulesoft.org/schema/mule/email"
+	xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+	xmlns:xml-module="http://www.mulesoft.org/schema/mule/xml-module" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:websocket="http://www.mulesoft.org/schema/mule/websocket" xmlns:sockets="http://www.mulesoft.org/schema/mule/sockets" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/sockets http://www.mulesoft.org/schema/mule/sockets/current/mule-sockets.xsd
+http://www.mulesoft.org/schema/mule/websocket http://www.mulesoft.org/schema/mule/websocket/current/mule-websocket.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/xml-module http://www.mulesoft.org/schema/mule/xml-module/current/mule-xml-module.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd">
+
+	<http:listener-config name="httpListenerConfig"
+		basePath="/regularHttp">
+		<http:listener-connection host="0.0.0.0"
+			port="80" />
+	</http:listener-config>
+
+	<websocket:config name="wsServer">
+		<websocket:connection>
+			<websocket:server-settings listenerConfig="httpListenerConfig"
+				listenerBasePath="/ws" />
+		</websocket:connection>
+	</websocket:config>
+	<websocket:config name="wsClient">
+		<websocket:connection>
+			<websocket:client-settings host="localhost"
+				port="80" basePath="/ws" >
+				<websocket:default-headers >
+					<websocket:header key="myFirstDefaultHeader" value="defaultHeader1" />
+					<websocket:header key="mySecondDefaultHeader" value="defaultHeader2" />
+				</websocket:default-headers>
+			</websocket:client-settings>
+		</websocket:connection>
+	</websocket:config>
+
+	<http:listener-config name="HTTP_Listener_config2"
+		doc:name="HTTP Listener config" doc:id="566ce6f3-49c7-471d-973d-526cce361dec">
+		<http:listener-connection host="0.0.0.0"
+			port="8082" />
+	</http:listener-config>
+	<email:smtp-config name="Email_SMTP" doc:name="Email SMTP" doc:id="0a098ce6-38e9-4717-8745-be2310efa1e8" >
+		<email:smtp-connection host="${email.host}" user="${email.username}" password="${email.password}" port="${email.port}">
+			<email:properties >
+				<email:property key="mail.smtp.starttls.enable" value="true" />
+			</email:properties>
+		</email:smtp-connection>
+	</email:smtp-config>
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="caf58be5-3ba4-4b79-88ee-039027f6ce89" >
+		<http:request-connection host="localhost" port="8082" />
+	</http:request-config>
+	<configuration-properties doc:name="Configuration properties" doc:id="c6a17ec5-b44b-40ac-8fe6-0ff8a686c26c" file="config.yaml" />
+	<flow name="chatserver">
+		<websocket:inbound-listener path="/chat"
+			config-ref="wsServer" outputMimeType="application/json" />
+		<ee:transform doc:name="Transform Message"
+			doc:id="101fa691-5305-4c39-a414-feef279405da">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" message="User message : #[payload.message]" />
+		<choice doc:name="Choice" doc:id="e2715e35-b06a-4a92-abcd-6fe750e2b3a3">
+			<when expression='#[payload.id==1]'>
+				<ee:transform doc:name="Transform Message"
+					doc:id="ca2fec26-2747-4a6f-b152-46f0dbeedcae">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	id:51,
+	message:"Yes Nik , How can i help you",
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<websocket:send doc:name="Send" doc:id="929670c9-9301-458a-8c90-5fafe9a0722d" config-ref="wsServer" socketId="#[attributes.socketId]"/>
+			
+</when>
+			<when expression="#[payload.id==2]">
+				<ee:transform doc:name="Transform Message"
+					doc:id="c343b519-9082-45da-bd4f-e01e163e5ee9">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	id:52,
+	message:"Here is the best deal for the day . 
+Iphone 11 pro max @ 1 dollar only !
+"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<websocket:send doc:name="Send"
+					doc:id="c8ae4bbf-f960-4c2a-91de-5ae1233d90c7" config-ref="wsServer"
+					socketId="#[attributes.socketId]" />
+			</when>
+			<when expression="#[payload.id==3]">
+				<ee:transform doc:name="Transform Message"
+					doc:id="731a0f12-7bcb-42bf-8571-310a38b8dded">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	id:53,
+	message: " Anything else i can help you with , Nik !!"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<websocket:send doc:name="Send"
+					doc:id="3ab7d55f-52e7-4846-9191-3020e665114e" config-ref="wsServer"
+					socketId="#[attributes.socketId]" />
+			</when>
+			<when expression="#[payload.id==4]">
+				<ee:transform doc:name="Transform Message"
+					doc:id="35d39bcb-c1da-426b-b33a-ae3222626814">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	id:54,
+	message:"Have a great day ahead, Nik !"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<websocket:send doc:name="Send"
+					doc:id="a6e8c516-a09d-4009-979f-7c1f1e6fe96f" config-ref="wsServer"
+					socketId="#[attributes.socketId]" />
+			</when>
+			<otherwise>
+				<logger level="INFO" doc:name="Logger"
+					doc:id="e6e2de20-2dc6-48e5-877a-2904111b5b39" message="in default now ." />
+			</otherwise>
+		</choice>
+
+	</flow>
+	<flow name="web_socket_client_chat" doc:id="a5285898-cad7-4d18-905f-69ffbc7ad516">
+		<websocket:outbound-listener doc:name="On New Outbound Message"
+			doc:id="25ff8dfb-2238-4b2b-bcc2-2dfc43a75e90" path="/chat"
+			config-ref="wsClient" outputMimeType="application/json" />
+		<ee:transform doc:name="Transform Message"
+			doc:id="37541555-04df-47b4-8594-eca9a481e40e">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+import * from dw::Runtime
+output application/json
+---
+
+payload wait 2500]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger"
+			doc:id="24859555-dfa0-4473-a34b-8e6ea9a08942" message="Server message : #[payload.message]" />
+		<choice doc:name="Choice" doc:id="b2c21ca4-246d-41ae-9259-7dec54b10f66">
+			<when expression="#[payload.id==51]">
+				<ee:transform doc:name="Transform Message"
+					doc:id="f09d0413-3098-4b7c-8910-781222de28ea">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	id:2,
+	message:"I want to know the best offer for the day"
+	
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<websocket:send doc:name="Send"
+					doc:id="d9e200b0-0b14-46e2-b945-c3248afeea3b" socketId="#[attributes.socketId]"
+					config-ref="wsClient">
+				</websocket:send>
+			</when>
+			<when expression="#[payload.id==52]">
+				<ee:transform doc:name="Transform Message"
+					doc:id="69468b69-b481-4006-acfa-0d03eb1ed094">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	id:3,
+	message:"That's a great deal, Thank You"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<websocket:send doc:name="Send"
+					doc:id="aee7fe10-88df-44aa-acf9-a8b4328765fc" config-ref="wsClient"
+					socketId="#[attributes.socketId]" />
+			</when>
+			<when expression="#[payload.id==53]">
+				<ee:transform doc:name="Transform Message"
+					doc:id="6a46298f-18ef-41bf-949d-2ba50520c640">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	id:4,
+	message:"Nope Thank you"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<websocket:send doc:name="Send"
+					doc:id="c5003646-087b-4069-bbdc-fdda4bfa7797" config-ref="wsClient"
+					socketId="#[attributes.socketId]" />
+			</when>
+			<otherwise>
+				<flow-ref doc:name="Flow Reference" doc:id="040835ee-326d-4d44-9d88-d6c6400a3834"
+					name="close_connection_flow" />
+			</otherwise>
+		</choice>
+	</flow>
+	<flow name="WebSocketclient" initialState="stopped">
+		<scheduler doc:name="Scheduler" doc:id="066bada0-84ce-42fc-936e-9f08663071d9">
+			<scheduling-strategy>
+				<fixed-frequency frequency="1" timeUnit="DAYS" />
+			</scheduling-strategy>
+		</scheduler>
+		<logger level="DEBUG" doc:name="Logger"
+			doc:id="3813913e-2ae8-4b6f-8b22-4a32ed53f69e" message="open a outbound web socket for Client-Server chat" />
+		<websocket:open-outbound-socket path="/chat"
+			config-ref="wsClient" socketId="123">
+			<reconnect />
+
+		</websocket:open-outbound-socket>
+		<logger level="DEBUG" doc:name="Logger"
+			doc:id="cf5da16a-03a9-465b-8beb-48f6c8f8b289" message=" web socket opened for chat ... " />
+		<ee:transform doc:name="Transform Message"
+			doc:id="57113aa3-002b-4e5d-aa67-d877c8b5c4ff">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	id : 1,
+	message : "Hey Team, Nik here"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<websocket:send doc:name="Send"
+			doc:id="1b6b081d-18be-4e09-8114-37f556327662" socketId="#[attributes.socketId]"
+			config-ref="wsClient">
+			<reconnect frequency="1000" count="5"/>
+		
+</websocket:send>
+		<logger level="DEBUG"
+			message=" client message sent successfully over web socket." />
+	</flow>
+	<flow name="close_connection_flow" doc:id="928a5d14-6ae1-406a-b0c6-4ba1329547be" initialState="started">
+		<logger level="INFO" doc:name="Logger" doc:id="fed6c40b-71c7-41eb-8bf6-b06dce31b719" message='#["Closing the web socket connection."]' />
+		<websocket:close-socket doc:name="Close socket" doc:id="41725a42-b5d5-412b-8e7c-d9b631222465" config-ref="wsClient" socketId="#[attributes.socketId]" reason="client left the chat" />
+	</flow>
+	<flow name="feedbackFlow" doc:id="0c3f6ce2-8b48-4628-98af-9acf56ccccc2" >
+		<websocket:on-socket-closed doc:name="On Socket Closed" doc:id="ef938ff0-05bf-45c0-b765-80c6169c48ab" config-ref="wsServer" path="/chat"/>
+		<logger level="INFO" doc:name="Logger" doc:id="cca35c54-e522-4ed1-8df9-8e47e5dcd6f5" message='#["The issue of the customer was resolved. Sending a feedback email to the customer...."]'/>
+		<email:send doc:name="Send" doc:id="fd4626ff-ee6b-4ad7-9555-67144593359e" config-ref="Email_SMTP" subject="Feedback " fromAddress="kuldeep.rana@apisero.com">
+			<email:to-addresses>
+				<email:to-address value="kuldeep.rana@apisero.com" />
+			</email:to-addresses>
+			<email:body contentType="text/plain">
+				<email:content><![CDATA[Hello Nikhil !!
+
+was our team able to resolve your issue?
+
+Your's faithfully,
+team admin]]></email:content>
+			</email:body>
+		</email:send>
+		<logger level="INFO" doc:name="Logger" doc:id="4d4c7106-60ed-4d9e-bcdc-83d728f42870" message='#["A Feedback email has been sent to Nikhil. Good work team.!!"]'/>
+	</flow>
+
+
+</mule>
