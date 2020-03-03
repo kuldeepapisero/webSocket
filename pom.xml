@@ -40,7 +40,7 @@
 						<properties>
 							<key>value</key>
 						</properties>
-					</cloudHubDeployment>
+				   </cloudHubDeployment>
 					<sharedLibraries>
 						<sharedLibrary>
 							<groupId>org.apache.activemq</groupId>
@@ -114,8 +114,10 @@
 		</repository>
 	</repositories>
 	<pluginRepositories>
-		<!-- <pluginRepository> <id>mule-public</id> <url>https://repository.mulesoft.org/nexus/content/repositories/releases</url> 
-			</pluginRepository> -->
+		<pluginRepository>
+			<id>mule-public</id>
+			<url>https://repository.mulesoft.org/nexus/content/repositories/releases</url>
+		</pluginRepository>
 		<pluginRepository>
 			<id>mulesoft-releases</id>
 			<name>mulesoft release repository</name>
